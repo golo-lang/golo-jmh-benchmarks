@@ -16,6 +16,7 @@
 
 package org.gololang.microbenchmarks.dispatch;
 
+import gololang.FunctionReference;
 import org.gololang.microbenchmarks.support.CodeLoader;
 import org.openjdk.jmh.annotations.*;
 
@@ -73,14 +74,16 @@ public class ClosureDispatchMicroBenchmark {
   @State(Scope.Thread)
   static public class GoloState {
 
-    MethodHandle stringifyHandle;
+    FunctionReference stringify;
     MethodHandle target;
 
     @Setup(Level.Trial)
     public void prepare() {
       MethodHandles.Lookup lookup = MethodHandles.lookup();
       try {
-        stringifyHandle = lookup.findStatic(ClosureDispatchMicroBenchmark.class, "stringify", genericMethodType(1));
+        stringify = new FunctionReference(
+            lookup.findStatic(
+                ClosureDispatchMicroBenchmark.class, "stringify", genericMethodType(1)));
         target = new CodeLoader().golo("dispatch", "closure_dispatch", 2);
       } catch (NoSuchMethodException | IllegalAccessException e) {
         throw new AssertionError(e);
@@ -95,6 +98,6 @@ public class ClosureDispatchMicroBenchmark {
 
   @Benchmark
   public Object golo_closure_dispatch(GoloState goloState, DataState dataState) throws Throwable {
-    return goloState.target.invokeExact((Object) goloState.stringifyHandle, dataState.argument);
+    return goloState.target.invokeExact((Object) goloState.stringify, dataState.argument);
   }
 }
