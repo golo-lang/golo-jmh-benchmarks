@@ -44,7 +44,7 @@ public class FilterMapReduceMicroBenchmark {
 
     private static final int N = 4096;
 
-    ArrayList<Object> data;
+    ArrayList<Long> data;
 
     @Setup(Level.Trial)
     public void prepare() {
@@ -56,7 +56,7 @@ public class FilterMapReduceMicroBenchmark {
   }
 
   @State(Scope.Thread)
-  static public class JavaState {
+  static public class CopyingJavaState {
 
     JavaCopyingFilterMapReduce.Predicate filterPredicate;
     JavaCopyingFilterMapReduce.Function mapFunction;
@@ -82,6 +82,21 @@ public class FilterMapReduceMicroBenchmark {
           return (long) a + (long) b;
         }
       };
+    }
+  }
+
+  @State(Scope.Thread)
+  static public class StreamJavaState {
+
+    java.util.function.Predicate<Long> filterPredicate;
+    java.util.function.Function<Long, Long> mapFunction;
+    java.util.function.BinaryOperator<Long> reduceFunction;
+
+    @Setup(Level.Trial)
+    public void prepare() {
+      filterPredicate = n -> n % 2L == 0L;
+      mapFunction = n -> n * 2L;
+      reduceFunction = (acc, next) -> acc + next;
     }
   }
 
@@ -172,13 +187,21 @@ public class FilterMapReduceMicroBenchmark {
   /* ................................................................................................................ */
 
   @Benchmark
-  public Object baseline_java_copying(JavaState javaState, DataState dataState) {
+  public Object baseline_java_copying(CopyingJavaState javaState, DataState dataState) {
     return
         reduce(
             map(
                 filter(dataState.data, javaState.filterPredicate),
                 javaState.mapFunction),
             0L, javaState.reduceFunction);
+  }
+
+  @Benchmark
+  public Object baseline_java_streams(StreamJavaState javaState, DataState dataState) {
+    return dataState.data.stream()
+        .filter(javaState.filterPredicate)
+        .map(javaState.mapFunction)
+        .reduce(0L, javaState.reduceFunction);
   }
 
   @Benchmark
