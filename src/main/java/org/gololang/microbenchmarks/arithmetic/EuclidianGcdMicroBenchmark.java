@@ -36,21 +36,17 @@ import static java.lang.invoke.MethodType.methodType;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class EuclidianGcdMicroBenchmark {
 
-  public static long gcd(final long x, final long y, final long repeat) {
-    long res = 0;
-    for (int i = 0; i < repeat; i++) {
-      long a = x;
-      long b = y;
-      while (a != b) {
-        if (a > b) {
-          a = a - b;
-        } else {
-          b = b - a;
-        }
+  public static long gcd(final long x, final long y) {
+    long a = x;
+    long b = y;
+    while (a != b) {
+      if (a > b) {
+        a = a - b;
+      } else {
+        b = b - a;
       }
-      res = a;
     }
-    return res;
+    return a;
   }
 
   @State(Scope.Thread)
@@ -61,8 +57,8 @@ public class EuclidianGcdMicroBenchmark {
     @Setup(Level.Trial)
     public void setup() {
       try {
-        gcdHandle = MethodHandles.lookup().findStatic(EuclidianGcdMicroBenchmark.class, "gcd", methodType(long.class, long.class, long.class, long.class));
-        gcdHandle = gcdHandle.asType(genericMethodType(3));
+        gcdHandle = MethodHandles.lookup().findStatic(EuclidianGcdMicroBenchmark.class, "gcd", methodType(long.class, long.class, long.class));
+        gcdHandle = gcdHandle.asType(genericMethodType(2));
       } catch (NoSuchMethodException | IllegalAccessException e) {
         throw new AssertionError(e);
       }
@@ -76,7 +72,7 @@ public class EuclidianGcdMicroBenchmark {
 
     @Setup(Level.Trial)
     public void setup() {
-      gcdHandle = new CodeLoader().golo("arithmetic", "gcd", 3);
+      gcdHandle = new CodeLoader().golo("arithmetic", "gcd", 2);
     }
   }
 
@@ -89,9 +85,9 @@ public class EuclidianGcdMicroBenchmark {
 
     @Setup(Level.Trial)
     public void setup() {
-      gcdHandle = new CodeLoader().groovy("arithmetic", "gcd", genericMethodType(3));
-      fast_gcdHandle = new CodeLoader().groovy("arithmetic", "fast_gcd", methodType(long.class, long.class, long.class, long.class));
-      fastest_gcdHandle = new CodeLoader().groovy("arithmetic", "fastest_gcd", methodType(long.class, long.class, long.class, long.class));
+      gcdHandle = new CodeLoader().groovy("arithmetic", "gcd", genericMethodType(2));
+      fast_gcdHandle = new CodeLoader().groovy("arithmetic", "fast_gcd", methodType(long.class, long.class, long.class));
+      fastest_gcdHandle = new CodeLoader().groovy("arithmetic", "fastest_gcd", methodType(long.class, long.class, long.class));
     }
   }
 
@@ -104,9 +100,9 @@ public class EuclidianGcdMicroBenchmark {
 
     @Setup(Level.Trial)
     public void setup() {
-      gcdHandle = new CodeLoader().groovy_indy("arithmetic", "gcd", genericMethodType(3));
-      fast_gcdHandle = new CodeLoader().groovy_indy("arithmetic", "fast_gcd", methodType(long.class, long.class, long.class, long.class));
-      fastest_gcdHandle = new CodeLoader().groovy_indy("arithmetic", "fastest_gcd", methodType(long.class, long.class, long.class, long.class));
+      gcdHandle = new CodeLoader().groovy_indy("arithmetic", "gcd", genericMethodType(2));
+      fast_gcdHandle = new CodeLoader().groovy_indy("arithmetic", "fast_gcd", methodType(long.class, long.class, long.class));
+      fastest_gcdHandle = new CodeLoader().groovy_indy("arithmetic", "fastest_gcd", methodType(long.class, long.class, long.class));
     }
   }
 
@@ -117,7 +113,7 @@ public class EuclidianGcdMicroBenchmark {
 
     @Setup(Level.Trial)
     public void setup() {
-       containerAndReceiver = new CodeLoader().jruby("arithmetic");
+      containerAndReceiver = new CodeLoader().jruby("arithmetic");
     }
   }
 
@@ -146,11 +142,10 @@ public class EuclidianGcdMicroBenchmark {
   @State(Scope.Thread)
   static public class DataSpace {
 
-    public final static int N = 5000;
+    public final static int N = 100_000;
 
     long[] x;
     long[] y;
-    long repeat;
 
     private int pos = 0;
 
@@ -162,87 +157,86 @@ public class EuclidianGcdMicroBenchmark {
 
     @Setup(Level.Trial)
     public void setup() {
-      Random rand = new Random(666L);
+      Random rand = new Random(999_666L);
       x = new long[N];
       y = new long[N];
       for (int i = 0; i < N; i++) {
         x[i] = (long) Math.abs(rand.nextInt());
         y[i] = (long) Math.abs(rand.nextInt());
       }
-      repeat = 50;
     }
   }
 
   @Benchmark
   public Object baseline_java_mh(DataSpace dataSpace, JavaState javaState) throws Throwable {
     int index = dataSpace.nextIndex();
-    return javaState.gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index], dataSpace.repeat);
+    return javaState.gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index]);
   }
 
   @Benchmark
   public Object golo(DataSpace dataSpace, GoloState goloState) throws Throwable {
     int index = dataSpace.nextIndex();
-    return goloState.gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index], dataSpace.repeat);
+    return goloState.gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index]);
   }
 
   @Benchmark
   public Object groovy(DataSpace dataSpace, GroovyState groovyState) throws Throwable {
     int index = dataSpace.nextIndex();
-    return groovyState.gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index], dataSpace.repeat);
+    return groovyState.gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index]);
   }
 
   @Benchmark
   public Object groovy_indy(DataSpace dataSpace, GroovyIndyState groovyState) throws Throwable {
     int index = dataSpace.nextIndex();
-    return groovyState.gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index], dataSpace.repeat);
+    return groovyState.gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index]);
   }
 
   @Benchmark
   public Object groovy_fast(DataSpace dataSpace, GroovyState groovyState) throws Throwable {
     int index = dataSpace.nextIndex();
-    return groovyState.fast_gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index], dataSpace.repeat);
+    return groovyState.fast_gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index]);
   }
 
   @Benchmark
   public Object groovy_indy_fast(DataSpace dataSpace, GroovyIndyState groovyState) throws Throwable {
     int index = dataSpace.nextIndex();
-    return groovyState.fast_gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index], dataSpace.repeat);
+    return groovyState.fast_gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index]);
   }
 
   @Benchmark
   public Object groovy_fastest(DataSpace dataSpace, GroovyState groovyState) throws Throwable {
     int index = dataSpace.nextIndex();
-    return groovyState.fastest_gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index], dataSpace.repeat);
+    return groovyState.fastest_gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index]);
   }
 
   @Benchmark
   public Object groovy_indy_fastest(DataSpace dataSpace, GroovyIndyState groovyState) throws Throwable {
     int index = dataSpace.nextIndex();
-    return groovyState.fastest_gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index], dataSpace.repeat);
+    return groovyState.fastest_gcdHandle.invoke(dataSpace.x[index], dataSpace.y[index]);
   }
 
   @Benchmark
   public Object jruby(DataSpace dataSpace, JRubyState jRubyState) {
     int index = dataSpace.nextIndex();
     return jRubyState.containerAndReceiver.container()
-        .callMethod(jRubyState.containerAndReceiver.receiver(), "gcd", dataSpace.x[index], dataSpace.y[index], dataSpace.repeat);
+        .callMethod(jRubyState.containerAndReceiver.receiver(), "gcd", dataSpace.x[index], dataSpace.y[index]);
   }
 
   @Benchmark
   public Object clojure(DataSpace dataSpace, ClojureState clojureState) {
     int index = dataSpace.nextIndex();
-    return clojureState.gcd.invoke(dataSpace.x[index], dataSpace.y[index], dataSpace.repeat);
+    return clojureState.gcd.invoke(dataSpace.x[index], dataSpace.y[index]);
   }
 
   @Benchmark
   public Object clojure_fast(DataSpace dataSpace, ClojureState clojureState) {
     int index = dataSpace.nextIndex();
-    return clojureState.gcd_fast.invoke(dataSpace.x[index], dataSpace.y[index], dataSpace.repeat);
+    return clojureState.gcd_fast.invoke(dataSpace.x[index], dataSpace.y[index]);
   }
 
   @Benchmark
   public Object nashorn(DataSpace dataSpace, NashornState nashornState) throws Throwable {
     int index = dataSpace.nextIndex();
-    return nashornState.invocable.invokeFunction("gcd", dataSpace.x[index], dataSpace.y[index], dataSpace.repeat);
+    return nashornState.invocable.invokeFunction("gcd", dataSpace.x[index], dataSpace.y[index]);
   }
 }
