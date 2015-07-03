@@ -1,16 +1,12 @@
-def gcd(x, y, repeat)
-  res = 0
-  for i in 0..repeat do
-    a = x
-    b = y
-    while a != b
-      if a > b
-        a = a - b
-      else
-        b = b - a
-      end
+def gcd(x, y)
+  a = x
+  b = y
+  while a != b
+    if a > b
+      a = a - b
+    else
+      b = b - a
     end
-    res = a
   end
-  return res
+  return a
 end
