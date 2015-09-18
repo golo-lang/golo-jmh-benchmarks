@@ -62,7 +62,7 @@
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-    <golo.version>3.0.0-incubation-M2</golo.version>
+    <golo.version>3.0.0-incubation-SNAPSHOT</golo.version>
     <jmh-core.version>1.10.5</jmh-core.version>
     <groovy-all.version>2.4.4</groovy-all.version>
     <clojure.version>1.8.0-alpha4</clojure.version>
