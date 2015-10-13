@@ -20,6 +20,8 @@ import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.eclipse.golo.compiler.GoloClassLoader;
 import org.jruby.embed.ScriptingContainer;
+import org.python.core.PyObject;
+import org.python.util.PythonInterpreter;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -99,5 +101,12 @@ public class CodeLoader {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public PythonInterpreter jython(String file) {
+    PythonInterpreter pythonInterpreter = new PythonInterpreter();
+    String filename = "snippets/jython/" + file + ".py";
+    pythonInterpreter.execfile(CodeLoader.class.getResourceAsStream("/" + filename));
+    return pythonInterpreter;
   }
 }

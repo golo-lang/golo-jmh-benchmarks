@@ -18,14 +18,16 @@ package org.gololang.microbenchmarks.support;
 
 import clojure.lang.Var;
 import org.junit.Test;
+import org.python.core.*;
+import org.python.util.PythonInterpreter;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
-import javax.script.ScriptException;
 import java.lang.invoke.MethodHandle;
 
 import static java.lang.invoke.MethodType.genericMethodType;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class CodeLoaderTest {
 
@@ -84,5 +86,26 @@ public class CodeLoaderTest {
     Invocable invocable = (Invocable) check;
     assertEquals(42, invocable.invokeFunction("truth"));
     assertEquals(11.0, invocable.invokeFunction("incr", 10));
+  }
+
+  @Test
+  public void test_jython_loading() throws Throwable {
+    CodeLoader loader = new CodeLoader();
+    PythonInterpreter interpreter = loader.jython("check");
+
+    PyObject object = interpreter.get("truth");
+    assertTrue(object instanceof PyFunction);
+    PyFunction fun = (PyFunction) object;
+    assertEquals(new PyInteger(42), fun.__call__());
+
+    object = interpreter.get("incr");
+    assertTrue(object instanceof PyFunction);
+    fun = (PyFunction) object;
+    assertEquals(new PyInteger(3), fun.__call__(new PyInteger(2)));
+
+    fun = (PyFunction) interpreter.get("foo");
+    interpreter.exec("from org.gololang.microbenchmarks.support import Foo");
+    PyObject foo = interpreter.eval("Foo()");
+    assertEquals(new PyString("foo"), fun.__call__(foo));
   }
 }
