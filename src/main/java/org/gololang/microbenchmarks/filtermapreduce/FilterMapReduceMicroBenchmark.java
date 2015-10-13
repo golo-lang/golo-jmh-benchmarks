@@ -23,6 +23,11 @@ import org.gololang.microbenchmarks.support.JRubyContainerAndReceiver;
 import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.openjdk.jmh.annotations.*;
+import org.python.core.PyArray;
+import org.python.core.PyFunction;
+import org.python.core.PyLong;
+import org.python.core.PyObject;
+import org.python.util.PythonInterpreter;
 
 import javax.script.Invocable;
 import java.lang.invoke.MethodHandle;
@@ -184,6 +189,20 @@ public class FilterMapReduceMicroBenchmark {
     }
   }
 
+  @State(Scope.Thread)
+  static public class JythonState {
+
+    PyFunction run;
+    PyObject data;
+
+    @Setup
+    public void prepare() {
+      CodeLoader loader = new CodeLoader();
+      PythonInterpreter interpreter = loader.jython("filter-map-reduce");
+      run = (PyFunction) interpreter.get("run");
+    }
+  }
+
   /* ................................................................................................................ */
 
   @Benchmark
@@ -249,6 +268,18 @@ public class FilterMapReduceMicroBenchmark {
       nashornState.array = nashornState.script.invokeFunction("convert", (Object) dataState.data.toArray());
     }
     return nashornState.script.invokeFunction("run", (Object) nashornState.array);
+  }
+
+  @Benchmark
+  public Object jython(JythonState jythonState, DataState dataState) throws Throwable {
+    if (jythonState.data == null) {
+      PyArray array = new PyArray(Long.class, dataState.data.size());
+      for (int i = 0; i < dataState.data.size(); i++) {
+        array.set(i, new PyLong(dataState.data.get(i)));
+      }
+      jythonState.data = array;
+    }
+    return jythonState.run.__call__(jythonState.data);
   }
 
   /* ................................................................................................................ */
