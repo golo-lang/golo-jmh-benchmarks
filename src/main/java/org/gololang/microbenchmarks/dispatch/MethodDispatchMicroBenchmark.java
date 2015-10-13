@@ -22,6 +22,9 @@ import org.gololang.microbenchmarks.support.CodeLoader;
 import org.gololang.microbenchmarks.support.JRubyContainerAndReceiver;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.openjdk.jmh.annotations.*;
+import org.python.core.PyArray;
+import org.python.core.PyFunction;
+import org.python.util.PythonInterpreter;
 
 import javax.script.Invocable;
 import java.lang.invoke.MethodHandle;
@@ -122,16 +125,43 @@ public class MethodDispatchMicroBenchmark {
     }
   }
 
-    @State(Scope.Thread)
-    static public class NashornState {
+  @State(Scope.Thread)
+  static public class NashornState {
 
-      Invocable script;
+    Invocable script;
 
-      @Setup(Level.Trial)
-      public void prepare() {
-        script = (Invocable) new CodeLoader().nashorn("dispatch");
-      }
+    @Setup(Level.Trial)
+    public void prepare() {
+      script = (Invocable) new CodeLoader().nashorn("dispatch");
     }
+  }
+
+  @State(Scope.Thread)
+  static public class JythonState {
+
+    PyFunction dispatcher;
+    PyArray monomorphicArray;
+    PyArray trimorphicArray;
+    PyArray polymorphicArray;
+
+    @Setup(Level.Trial)
+    public void prepare() {
+      PythonInterpreter interpreter = new CodeLoader().jython("dispatch");
+      dispatcher = (PyFunction) interpreter.get("dispatch");
+
+      MonomorphicState monomorphicState = new MonomorphicState();
+      monomorphicState.prepare();
+      monomorphicArray = new PyArray(Object.class, monomorphicState.data);
+
+      TriMorphicState triMorphicState = new TriMorphicState();
+      triMorphicState.prepare();
+      trimorphicArray = new PyArray(Object.class, triMorphicState.data);
+
+      PolyMorphicState polyMorphicState = new PolyMorphicState();
+      polyMorphicState.prepare();
+      polymorphicArray = new PyArray(Object.class, polyMorphicState.data);
+    }
+  }
 
   /* ................................................................................................................ */
 
@@ -252,6 +282,11 @@ public class MethodDispatchMicroBenchmark {
     return nashornState.script.invokeFunction("dispatch", (Object) monomorphicState.data);
   }
 
+  @Benchmark
+  public Object monomorphic_jython(JythonState jythonState) throws Throwable {
+    return jythonState.dispatcher.__call__(jythonState.monomorphicArray);
+  }
+
   /* ................................................................................................................ */
 
   @Benchmark
@@ -302,6 +337,11 @@ public class MethodDispatchMicroBenchmark {
     return nashornState.script.invokeFunction("dispatch", (Object) triMorphicState.data);
   }
 
+  @Benchmark
+  public Object trimorphic_jython(JythonState jythonState) throws Throwable {
+    return jythonState.dispatcher.__call__(jythonState.trimorphicArray);
+  }
+
   /* ................................................................................................................ */
 
   @Benchmark
@@ -350,6 +390,11 @@ public class MethodDispatchMicroBenchmark {
   @Benchmark
   public Object polymorphic_nashorn(NashornState nashornState, PolyMorphicState polyMorphicState) throws Throwable {
     return nashornState.script.invokeFunction("dispatch", (Object) polyMorphicState.data);
+  }
+
+  @Benchmark
+  public Object polymorphic_jython(JythonState jythonState) throws Throwable {
+    return jythonState.dispatcher.__call__(jythonState.polymorphicArray);
   }
 
   /* ................................................................................................................ */
