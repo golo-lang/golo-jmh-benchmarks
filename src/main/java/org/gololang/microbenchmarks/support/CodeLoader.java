@@ -16,9 +16,9 @@
 
 package org.gololang.microbenchmarks.support;
 
-import fr.insalyon.citi.golo.compiler.GoloClassLoader;
 import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.eclipse.golo.compiler.GoloClassLoader;
 import org.jruby.embed.ScriptingContainer;
 
 import javax.script.ScriptEngine;
