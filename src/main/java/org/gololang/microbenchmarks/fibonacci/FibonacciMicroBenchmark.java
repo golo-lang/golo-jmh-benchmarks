@@ -20,6 +20,9 @@ import clojure.lang.Var;
 import org.gololang.microbenchmarks.support.CodeLoader;
 import org.gololang.microbenchmarks.support.JRubyContainerAndReceiver;
 import org.openjdk.jmh.annotations.*;
+import org.python.core.PyFunction;
+import org.python.core.PyLong;
+import org.python.util.PythonInterpreter;
 
 import javax.script.Invocable;
 import java.lang.invoke.MethodHandle;
@@ -101,6 +104,19 @@ public class FibonacciMicroBenchmark {
     }
   }
 
+  @State(Scope.Thread)
+  static public class JythonState {
+
+    PyFunction fib;
+
+    @Setup(Level.Trial)
+    public void prepare() {
+      CodeLoader loader = new CodeLoader();
+      PythonInterpreter interpreter = loader.jython("fibonacci");
+      fib = (PyFunction) interpreter.get("fib");
+    }
+  }
+
   /* ................................................................................................................ */
 
   @Benchmark
@@ -144,6 +160,11 @@ public class FibonacciMicroBenchmark {
     return nashornState.invocable.invokeFunction("fib", state30.n);
   }
 
+  @Benchmark
+  public Object jython_30(State30 state30, JythonState jythonState) throws Throwable {
+    return jythonState.fib.__call__(new PyLong(state30.n));
+  }
+
   /* ................................................................................................................ */
 
   @Benchmark
@@ -185,5 +206,11 @@ public class FibonacciMicroBenchmark {
   @Benchmark
   public Object nashorn_40(State40 state40, NashornState nashornState) throws Throwable {
     return nashornState.invocable.invokeFunction("fib", state40.n);
+  }
+
+  // Disabled, too slow
+  // @Benchmark
+  public Object jython_40(State40 state40, JythonState jythonState) throws Throwable {
+    return jythonState.fib.__call__(new PyLong(state40.n));
   }
 }

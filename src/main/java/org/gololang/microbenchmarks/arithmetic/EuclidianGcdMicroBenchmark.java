@@ -20,6 +20,9 @@ import clojure.lang.Var;
 import org.gololang.microbenchmarks.support.CodeLoader;
 import org.gololang.microbenchmarks.support.JRubyContainerAndReceiver;
 import org.openjdk.jmh.annotations.*;
+import org.python.core.PyFunction;
+import org.python.core.PyLong;
+import org.python.util.PythonInterpreter;
 
 import javax.script.Invocable;
 import java.lang.invoke.MethodHandle;
@@ -167,6 +170,38 @@ public class EuclidianGcdMicroBenchmark {
     }
   }
 
+  @State(Scope.Thread)
+  static public class PythonState {
+
+    PyLong[] x;
+    PyLong[] y;
+
+    PyFunction gcd;
+
+    private int pos = 0;
+
+    public int nextIndex() {
+      int i = pos;
+      pos = (pos + 1) % DataSpace.N;
+      return i;
+    }
+
+    @Setup(Level.Trial)
+    public void prepare() {
+      CodeLoader loader = new CodeLoader();
+      PythonInterpreter interpreter = loader.jython("arithmetic");
+      gcd = (PyFunction) interpreter.get("gcd");
+
+      Random rand = new Random(999_666L);
+      x = new PyLong[DataSpace.N];
+      y = new PyLong[DataSpace.N];
+      for (int i = 0; i < DataSpace.N; i++) {
+        x[i] = new PyLong(Math.abs(rand.nextInt()));
+        y[i] = new PyLong(Math.abs(rand.nextInt()));
+      }
+    }
+  }
+
   @Benchmark
   public Object baseline_java_mh(DataSpace dataSpace, JavaState javaState) throws Throwable {
     int index = dataSpace.nextIndex();
@@ -238,5 +273,11 @@ public class EuclidianGcdMicroBenchmark {
   public Object nashorn(DataSpace dataSpace, NashornState nashornState) throws Throwable {
     int index = dataSpace.nextIndex();
     return nashornState.invocable.invokeFunction("gcd", dataSpace.x[index], dataSpace.y[index]);
+  }
+
+  @Benchmark
+  public Object jython(PythonState pythonState) throws Throwable {
+    int index = pythonState.nextIndex();
+    return pythonState.gcd.__call__(pythonState.x[index], pythonState.y[index]);
   }
 }
