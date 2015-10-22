@@ -64,9 +64,9 @@
 
     <golo.version>3.0.0-incubation-SNAPSHOT</golo.version>
     <jmh-core.version>1.10.5</jmh-core.version>
-    <groovy-all.version>2.4.4</groovy-all.version>
-    <clojure.version>1.8.0-alpha4</clojure.version>
-    <jruby-complete.version>9.0.1.0</jruby-complete.version>
+    <groovy-all.version>2.4.5</groovy-all.version>
+    <clojure.version>1.8.0-beta1</clojure.version>
+    <jruby-complete.version>9.0.3.0</jruby-complete.version>
     <junit.version>4.12</junit.version>
 
     <maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
