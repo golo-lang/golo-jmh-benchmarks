@@ -4,7 +4,7 @@ This project contains several micro-benchmarks to stress specific points of the 
 compilation and runtime strategies. It also contains some comparison elements with
 some other JVM dynamic languages.
 
-    Copyright 2012-2015 Institut National des Sciences Appliquées de Lyon (INSA-Lyon)
+    Copyright 2012-2016 Institut National des Sciences Appliquées de Lyon (INSA-Lyon)
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
