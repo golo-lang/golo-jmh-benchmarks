@@ -44,6 +44,14 @@ class Arithmetic {
     return x + y
   }
 
+  static def sum_with_constant(x) {
+    return x + 10L;
+  }
+
+  static def sum_of_constants() {
+    return 22L + 10L;
+  }
+
   static long fast_sum(long x, long y) {
     return x + y
   }

@@ -14,3 +14,7 @@ function gcd = |x, y| {
 }
 
 function sum = |x, y| -> x + y
+
+function sum_with_constant = |x| -> x + 10_L
+
+function sum_of_constants = -> 22_L + 10_L

@@ -23,6 +23,10 @@ public class CostOfSumMicroBenchmark {
     return (Long) x + (Long) y;
   }
 
+  public static Object boxed_sum_with_constant(Object x) {
+    return (Long) x + 10L;
+  }
+
   @State(Scope.Thread)
   static public class DataState {
 
@@ -42,12 +46,15 @@ public class CostOfSumMicroBenchmark {
 
     MethodHandle sumHandle;
     MethodHandle boxedSumHandle;
+    MethodHandle boxedSumWithConstantHandle;
 
     @Setup(Level.Trial)
     public void setup() {
       try {
-        sumHandle = MethodHandles.lookup().findStatic(CostOfSumMicroBenchmark.class, "sum", methodType(long.class, long.class, long.class));
-        boxedSumHandle = MethodHandles.lookup().findStatic(CostOfSumMicroBenchmark.class, "boxed_sum", genericMethodType(2));
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        sumHandle = lookup.findStatic(CostOfSumMicroBenchmark.class, "sum", methodType(long.class, long.class, long.class));
+        boxedSumHandle = lookup.findStatic(CostOfSumMicroBenchmark.class, "boxed_sum", genericMethodType(2));
+        boxedSumWithConstantHandle = lookup.findStatic(CostOfSumMicroBenchmark.class, "boxed_sum_with_constant", genericMethodType(1));
       } catch (NoSuchMethodException | IllegalAccessException e) {
         throw new AssertionError(e);
       }
@@ -58,10 +65,14 @@ public class CostOfSumMicroBenchmark {
   static public class GoloState {
 
     MethodHandle sumHandle;
+    MethodHandle sumWithConstantHandle;
+    MethodHandle sumOfConstantsHandle;
 
     @Setup(Level.Trial)
     public void setup() {
       sumHandle = new CodeLoader().golo("arithmetic", "sum", 2);
+      sumWithConstantHandle = new CodeLoader().golo("arithmetic", "sum_with_constant", 1);
+      sumOfConstantsHandle = new CodeLoader().golo("arithmetic", "sum_of_constants", 0);
     }
   }
 
@@ -69,12 +80,16 @@ public class CostOfSumMicroBenchmark {
   static public class GroovyState {
 
     MethodHandle sumHandle;
+    MethodHandle sumWithConstantHandle;
+    MethodHandle sumOfConstantsHandle;
     MethodHandle fastSumHandle;
     MethodHandle fastestSumHandle;
 
     @Setup(Level.Trial)
     public void setup() {
       sumHandle = new CodeLoader().groovy("arithmetic", "sum", genericMethodType(2));
+      sumWithConstantHandle = new CodeLoader().groovy("arithmetic", "sum_with_constant", genericMethodType(1));
+      sumOfConstantsHandle = new CodeLoader().groovy("arithmetic", "sum_of_constants", genericMethodType(0));
       fastSumHandle = new CodeLoader().groovy("arithmetic", "fast_sum", methodType(long.class, long.class, long.class));
       fastestSumHandle = new CodeLoader().groovy("arithmetic", "fastest_sum", methodType(long.class, long.class, long.class));
     }
@@ -84,11 +99,15 @@ public class CostOfSumMicroBenchmark {
   static public class GroovyIndyState {
 
     MethodHandle sumHandle;
+    MethodHandle sumWithConstantHandle;
+    MethodHandle sumOfConstantsHandle;
     MethodHandle fastSumHandle;
     MethodHandle fastestSumHandle;
 
     @Setup(Level.Trial)
     public void setup() {
+      sumWithConstantHandle = new CodeLoader().groovy("arithmetic", "sum_with_constant", genericMethodType(1));
+      sumOfConstantsHandle = new CodeLoader().groovy("arithmetic", "sum_of_constants", genericMethodType(0));
       sumHandle = new CodeLoader().groovy_indy("arithmetic", "sum", genericMethodType(2));
       fastSumHandle = new CodeLoader().groovy_indy("arithmetic", "fast_sum", methodType(long.class, long.class, long.class));
       fastestSumHandle = new CodeLoader().groovy_indy("arithmetic", "fastest_sum", methodType(long.class, long.class, long.class));
@@ -101,42 +120,82 @@ public class CostOfSumMicroBenchmark {
   }
 
   @Benchmark
+  public Object baseline_return_value(DataState dataState) {
+    return dataState.x;
+  }
+
+  @Benchmark
   public Object baseline_java_boxed(DataState dataState, JavaState javaState) throws Throwable {
     return javaState.boxedSumHandle.invoke(dataState.x, dataState.y);
   }
 
   @Benchmark
-  public Object golo(DataState dataState, GoloState javaState) throws Throwable {
-    return javaState.sumHandle.invoke(dataState.x, dataState.y);
+  public Object baseline_java_boxed_with_constant(DataState dataState, JavaState javaState) throws Throwable {
+    return javaState.boxedSumWithConstantHandle.invoke(dataState.x);
   }
 
   @Benchmark
-  public Object groovy(DataState dataState, GroovyState groovyState) throws Throwable {
+  public Object golo_sum(DataState dataState, GoloState goloState) throws Throwable {
+    return goloState.sumHandle.invoke(dataState.x, dataState.y);
+  }
+
+  @Benchmark
+  public Object golo_sum_with_constant(DataState dataState, GoloState goloState) throws Throwable {
+    return goloState.sumWithConstantHandle.invoke(dataState.x);
+  }
+
+  @Benchmark
+  public Object golo_sum_of_constants(DataState dataState, GoloState goloState) throws Throwable {
+    return goloState.sumOfConstantsHandle.invoke();
+  }
+
+  @Benchmark
+  public Object groovy_sum(DataState dataState, GroovyState groovyState) throws Throwable {
     return groovyState.sumHandle.invoke(dataState.x, dataState.y);
   }
 
   @Benchmark
-  public Object groovy_fast(DataState dataState, GroovyState groovyState) throws Throwable {
+  public Object groovy_sum_with_constant(DataState dataState, GroovyState groovyState) throws Throwable {
+    return groovyState.sumWithConstantHandle.invoke(dataState.x);
+  }
+
+  @Benchmark
+  public Object groovy_sum_of_constants(GroovyState groovyState) throws Throwable {
+    return groovyState.sumOfConstantsHandle.invoke();
+  }
+
+  @Benchmark
+  public Object groovy_sum_fast(DataState dataState, GroovyState groovyState) throws Throwable {
     return groovyState.fastSumHandle.invoke(dataState.x, dataState.y);
   }
 
   @Benchmark
-  public Object groovy_fastest(DataState dataState, GroovyState groovyState) throws Throwable {
+  public Object groovy_sum_fastest(DataState dataState, GroovyState groovyState) throws Throwable {
     return groovyState.fastestSumHandle.invoke(dataState.x, dataState.y);
   }
 
   @Benchmark
-  public Object groovy_indy(DataState dataState, GroovyIndyState groovyState) throws Throwable {
+  public Object groovy_sum_indy(DataState dataState, GroovyIndyState groovyState) throws Throwable {
     return groovyState.sumHandle.invoke(dataState.x, dataState.y);
   }
 
   @Benchmark
-  public Object groovy_indy_fast(DataState dataState, GroovyIndyState groovyState) throws Throwable {
+  public Object groovy_sum_indy_sum_with_constant(DataState dataState, GroovyIndyState groovyState) throws Throwable {
+    return groovyState.sumWithConstantHandle.invoke(dataState.x);
+  }
+
+  @Benchmark
+  public Object groovy_sum_indy_sum_of_constants(GroovyIndyState groovyState) throws Throwable {
+    return groovyState.sumOfConstantsHandle.invoke();
+  }
+
+  @Benchmark
+  public Object groovy_sum_indy_fast(DataState dataState, GroovyIndyState groovyState) throws Throwable {
     return groovyState.fastSumHandle.invoke(dataState.x, dataState.y);
   }
 
   @Benchmark
-  public Object groovy_indy_fastest(DataState dataState, GroovyIndyState groovyState) throws Throwable {
+  public Object groovy_sum_indy_fastest(DataState dataState, GroovyIndyState groovyState) throws Throwable {
     return groovyState.fastestSumHandle.invoke(dataState.x, dataState.y);
   }
 }
