@@ -63,10 +63,10 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <golo.version>3.3.0-M1</golo.version>
-    <jmh-core.version>1.20</jmh-core.version>
-    <groovy-all.version>3.0.0-alpha-1</groovy-all.version>
-    <clojure.version>1.10.0-alpha4</clojure.version>
-    <jruby-complete.version>9.1.15.0</jruby-complete.version>
+    <jmh-core.version>1.21</jmh-core.version>
+    <groovy-all.version>3.0.0-alpha-3</groovy-all.version>
+    <clojure.version>1.10.0-RC1</clojure.version>
+    <jruby-complete.version>9.2.4.0</jruby-complete.version>
     <junit.version>4.12</junit.version>
 
     <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
@@ -97,7 +97,7 @@
 
     <dependency>
       <groupId>org.codehaus.groovy</groupId>
-      <artifactId>groovy-all</artifactId>
+      <artifactId>groovy</artifactId>
       <version>${groovy-all.version}</version>
       <classifier>indy</classifier>
     </dependency>
